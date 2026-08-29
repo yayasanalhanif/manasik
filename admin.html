@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Upload Halaman</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 400px; margin: auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { background: #2980b9; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; width: 100%; }
+    </style>
+</head>
+<body>
+    <h2>Upload Halaman Flipbook</h2>
+    <p style="font-size: 14px; color: #666;">Beri nama file berurutan (misal: 01-cover.jpg, 02-niat.jpg) agar posisi halamannya tepat.</p>
+    
+    <div class="form-group">
+        <label>Pilih Gambar Halaman:</label>
+        <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <button onclick="uploadFile()">Upload ke Google Drive</button>
+    <p id="status"></p>
+
+    <script>
+        // GANTI DENGAN URL WEB APP ANDA DARI LANGKAH 1
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwArUkdfr-DsFSSQxfm7V0PbR07dULlyW0-SZZkqSHejjDVdigJ_VK6bZz83sb6HMEUPg/exec"; 
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput').files[0];
+            const status = document.getElementById('status');
+
+            if (!fileInput) {
+                alert("Pilih file terlebih dahulu!");
+                return;
+            }
+
+            status.innerText = "Mengonversi dan mengunggah...";
+
+            const reader = new FileReader();
+            reader.readAsDataURL(fileInput);
+            reader.onload = async function () {
+                const base64String = reader.result.split(',')[1];
+                
+                const payload = {
+                    fileName: fileInput.name,
+                    mimeType: fileInput.type,
+                    base64: base64String
+                };
+
+                try {
+                    const response = await fetch(GAS_URL, {
+                        method: "POST",
+                        // Menggunakan text/plain untuk menghindari pemblokiran CORS pada GAS
+                        headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        status.innerText = "Upload berhasil! Halaman sudah masuk ke Drive.";
+                    } else {
+                        status.innerText = "Gagal: " + result.message;
+                    }
+                } catch (error) {
+                    status.innerText = "Error koneksi: " + error.message;
+                }
+            };
+        }
+    </script>
+</body>
+</html>
