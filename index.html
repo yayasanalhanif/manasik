@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panduan Manasik Haji & Umroh</title>
+    <style>
+        body { background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        .flip-book { width: 350px; height: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .page { background-color: white; padding: 20px; overflow: hidden; border: 1px solid #ddd; }
+        .page-content { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center; }
+        .page-content h2 { color: #2c3e50; }
+    </style>
+</head>
+<body>
+    <div class="flip-book" id="buku-manasik">
+        <div class="page">
+            <div class="page-content">
+                <h2>Panduan Manasik</h2>
+                <p>Haji & Umroh</p>
+            </div>
+        </div>
+        <div class="page">
+            <div class="page-content">
+                <h3>Niat & Ihram</h3>
+                <p>Panduan miqat dan larangan selama berihram.</p>
+            </div>
+        </div>
+        <div class="page">
+            <div class="page-content">
+                <h3>Doa Tawaf</h3>
+                <p>Putaran pertama hingga ketujuh.</p>
+            </div>
+        </div>
+        <div class="page">
+            <div class="page-content">
+                <h3>Catatan Penutup</h3>
+                <p>Semoga mabrur.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Library -->
+    <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const pageFlip = new St.PageFlip(document.getElementById('buku-manasik'), {
+                width: 350,
+                height: 500,
+                showCover: true,
+                useMouseEvents: true
+            });
+            pageFlip.loadFromHTML(document.querySelectorAll('.page'));
+        });
+    </script>
+</body>
+</html>
