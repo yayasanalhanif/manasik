@@ -3,55 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panduan Manasik Haji & Umroh</title>
+    <title>Panduan Manasik - Edisi Digital</title>
     <style>
-        body { background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
-        .flip-book { width: 350px; height: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .page { background-color: white; padding: 20px; overflow: hidden; border: 1px solid #ddd; }
-        .page-content { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center; }
-        .page-content h2 { color: #2c3e50; }
+        body { background-color: #e5e5e5; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #loading { font-family: sans-serif; margin-bottom: 20px; color: #333; }
+        .flip-book { width: 350px; height: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: none; }
+        .page { background-color: white; overflow: hidden; border: 1px solid #ddd; }
+        .page img { width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
+
+    <div id="loading">Memuat Buku Panduan dari Server...</div>
+    
     <div class="flip-book" id="buku-manasik">
-        <div class="page">
-            <div class="page-content">
-                <h2>Panduan Manasik</h2>
-                <p>Haji & Umroh</p>
-            </div>
-        </div>
-        <div class="page">
-            <div class="page-content">
-                <h3>Niat & Ihram</h3>
-                <p>Panduan miqat dan larangan selama berihram.</p>
-            </div>
-        </div>
-        <div class="page">
-            <div class="page-content">
-                <h3>Doa Tawaf</h3>
-                <p>Putaran pertama hingga ketujuh.</p>
-            </div>
-        </div>
-        <div class="page">
-            <div class="page-content">
-                <h3>Catatan Penutup</h3>
-                <p>Semoga mabrur.</p>
-            </div>
-        </div>
+        <!-- Halaman akan disuntikkan secara dinamis di sini -->
     </div>
 
-    <!-- Import Library -->
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const pageFlip = new St.PageFlip(document.getElementById('buku-manasik'), {
-                width: 350,
-                height: 500,
-                showCover: true,
-                useMouseEvents: true
-            });
-            pageFlip.loadFromHTML(document.querySelectorAll('.page'));
-        });
+        // GANTI DENGAN URL WEB APP ANDA
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwArUkdfr-DsFSSQxfm7V0PbR07dULlyW0-SZZkqSHejjDVdigJ_VK6bZz83sb6HMEUPg/exec";
+        const container = document.getElementById('buku-manasik');
+        const loading = document.getElementById('loading');
+
+        async function muatFlipbook() {
+            try {
+                // 1. Ambil data dari Apps Script
+                const response = await fetch(GAS_URL);
+                const files = await response.json();
+
+                if (files.length === 0) {
+                    loading.innerText = "Buku panduan belum memiliki halaman.";
+                    return;
+                }
+
+                // 2. Buat elemen HTML untuk setiap gambar
+                files.forEach(file => {
+                    const pageDiv = document.createElement('div');
+                    pageDiv.className = 'page';
+                    
+                    const img = document.createElement('img');
+                    img.src = file.url;
+                    img.alt = file.name;
+                    
+                    pageDiv.appendChild(img);
+                    container.appendChild(pageDiv);
+                });
+
+                // 3. Sembunyikan loading dan tampilkan buku
+                loading.style.display = 'none';
+                container.style.display = 'block';
+
+                // 4. Inisialisasi efek Flipbook
+                const pageFlip = new St.PageFlip(container, {
+                    width: 350,
+                    height: 500,
+                    showCover: true,
+                    useMouseEvents: true,
+                    maxShadowOpacity: 0.5
+                });
+                pageFlip.loadFromHTML(document.querySelectorAll('.page'));
+
+            } catch (error) {
+                loading.innerText = "Gagal memuat buku: " + error.message;
+            }
+        }
+
+        // Jalankan fungsi saat halaman siap
+        document.addEventListener('DOMContentLoaded', muatFlipbook);
     </script>
 </body>
 </html>
