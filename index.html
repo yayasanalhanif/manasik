@@ -9,7 +9,7 @@
         #loading { font-family: sans-serif; margin-bottom: 20px; color: #333; }
         .flip-book { width: 350px; height: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: none; }
         .page { background-color: white; overflow: hidden; border: 1px solid #ddd; }
-        .page img { width: 100%; height: 100%; object-fit: cover; }
+        .page img { width: 100%; height: 100%; object-fit: contain; background-color: white; }
     </style>
 </head>
 <body>
@@ -57,8 +57,13 @@
 
                 // 4. Inisialisasi efek Flipbook
                 const pageFlip = new St.PageFlip(container, {
-                    width: 350,
-                    height: 500,
+                    width: 350,       // Lebar acuan dasar
+                    height: 500,      // Tinggi acuan dasar
+                    size: "stretch",  // Tambahkan ini agar buku responsif dan elastis
+                    minWidth: 300,    // Lebar minimal layar
+                    maxWidth: 800,    // Lebar maksimal di tablet/PC
+                    minHeight: 400,
+                    maxHeight: 1200,
                     showCover: true,
                     useMouseEvents: true,
                     maxShadowOpacity: 0.5
