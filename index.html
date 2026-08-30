@@ -3,80 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panduan Manasik - Edisi Digital</title>
+    <title>Panduan Manasik - Alhanif</title>
     <style>
-        body { background-color: #e5e5e5; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        #loading { font-family: sans-serif; margin-bottom: 20px; color: #333; }
-        .flip-book { width: 350px; height: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: none; }
-        .page { background-color: white; overflow: hidden; border: 1px solid #ddd; }
-        .page img { width: 100%; height: 100%; object-fit: contain; background-color: white; }
+        body { background-color: #e5e5e5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .flip-book { display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .page { background-color: white; overflow: hidden; }
+        canvas { width: 100%; height: 100%; } /* Memastikan canvas proporsional */
     </style>
 </head>
 <body>
-
-    <div id="loading">Memuat Buku Panduan dari Server...</div>
+    <div id="loading" style="font-family: sans-serif; color: #333;">Menyusun Buku Panduan...</div>
     
     <div class="flip-book" id="buku-manasik">
-        <!-- Halaman akan disuntikkan secara dinamis di sini -->
+        <!-- Halaman akan di-generate oleh PDF.js di sini -->
     </div>
 
+    <!-- Library PDF.js dan PageFlip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
+    
     <script>
-        // GANTI DENGAN URL WEB APP ANDA
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwArUkdfr-DsFSSQxfm7V0PbR07dULlyW0-SZZkqSHejjDVdigJ_VK6bZz83sb6HMEUPg/exec";
+        // LOKASI FILE PDF: Sangat disarankan simpan langsung di repo GitHub Anda
+        const urlPDF = 'assets/panduan-manasik.pdf'; 
+
         const container = document.getElementById('buku-manasik');
         const loading = document.getElementById('loading');
+        
+        // Konfigurasi Worker untuk PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        async function muatFlipbook() {
+        const muatPDF = async () => {
             try {
-                // 1. Ambil data dari Apps Script
-                const response = await fetch(GAS_URL);
-                const files = await response.json();
-
-                if (files.length === 0) {
-                    loading.innerText = "Buku panduan belum memiliki halaman.";
-                    return;
-                }
-
-                // 2. Buat elemen HTML untuk setiap gambar
-                files.forEach(file => {
+                // 1. Baca file PDF
+                const pdf = await pdfjsLib.getDocument(urlPDF).promise;
+                
+                // 2. Looping untuk setiap halaman di dalam PDF
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    
                     const pageDiv = document.createElement('div');
                     pageDiv.className = 'page';
                     
-                    const img = document.createElement('img');
-                    img.src = file.url;
-                    img.alt = file.name;
+                    // Skala 1.5 agar teks Arab dan latin tetap tajam saat di-zoom
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
                     
-                    pageDiv.appendChild(img);
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    
+                    // Render halaman PDF ke dalam canvas HTML
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    
+                    pageDiv.appendChild(canvas);
                     container.appendChild(pageDiv);
-                });
+                }
 
-                // 3. Sembunyikan loading dan tampilkan buku
                 loading.style.display = 'none';
                 container.style.display = 'block';
 
-                // 4. Inisialisasi efek Flipbook
+                // 3. Inisialisasi Flipbook dengan rasio aman (A5)
                 const pageFlip = new St.PageFlip(container, {
-                    width: 350,       // Lebar acuan dasar
-                    height: 500,      // Tinggi acuan dasar
-                    size: "stretch",  // Tambahkan ini agar buku responsif dan elastis
-                    minWidth: 300,    // Lebar minimal layar
-                    maxWidth: 800,    // Lebar maksimal di tablet/PC
-                    minHeight: 400,
-                    maxHeight: 1200,
+                    width: 350,       
+                    height: 496,      // Kombinasi 350x496 membentuk rasio kertas A5
+                    size: "stretch",  // Properti wajib agar buku responsif di HP
+                    minWidth: 315,
+                    maxWidth: 1000,
+                    minHeight: 420,
+                    maxHeight: 1350,
                     showCover: true,
-                    useMouseEvents: true,
-                    maxShadowOpacity: 0.5
+                    useMouseEvents: true
                 });
+                
                 pageFlip.loadFromHTML(document.querySelectorAll('.page'));
 
             } catch (error) {
-                loading.innerText = "Gagal memuat buku: " + error.message;
+                loading.innerText = "Gagal memuat PDF: Pastikan file berada di GitHub. Error: " + error.message;
             }
-        }
+        };
 
-        // Jalankan fungsi saat halaman siap
-        document.addEventListener('DOMContentLoaded', muatFlipbook);
+        document.addEventListener('DOMContentLoaded', muatPDF);
     </script>
 </body>
 </html>
