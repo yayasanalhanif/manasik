@@ -3,119 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panduan Manasik - Alhanif</title>
+    <title>Panduan Manasik Dinamis</title>
     <style>
-        /* Ubah dan tambahkan CSS ini di dalam tag <style> */
-        body { 
-            background-color: #e5e5e5; 
-            display: flex; 
-            flex-direction: column; /* Memaksa elemen tersusun dari atas ke bawah */
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-        }
+        body { background-color: #e5e5e5; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; }
         
-        .title-bar {
-            width: 100%;
-            background-color: #2c3e50; /* Warna latar baris judul */
-            color: white;
-            text-align: center;
-            padding: 15px 0;
-            font-family: sans-serif;
-            font-size: 1.2rem;
-            font-weight: bold;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2); /* Efek bayangan */
-            margin-bottom: auto; /* Mendorong buku ke tengah sisa ruang */
-        }
+        .title-bar { width: 100%; color: white; text-align: center; padding: 15px 0; font-family: sans-serif; font-size: 1.2rem; font-weight: bold; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
         
-        /* Tambahkan margin atas pada buku agar tidak terlalu menempel dengan judul */
-        .flip-book { 
-            display: none; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
-            margin-top: 20px; 
-            margin-bottom: auto;
-        }
-  
+        .flip-book { display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-top: 20px; }
         .page { background-color: white; overflow: hidden; }
-        canvas { width: 100%; height: 100%; } /* Memastikan canvas proporsional */
+        canvas { width: 100%; height: 100%; }
+        
+        /* Gaya Navigasi Bawah */
+        .nav-controls { display: none; margin-top: 20px; gap: 15px; margin-bottom: auto; }
+        .nav-btn { background: #333; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .nav-btn:hover { background: #555; }
     </style>
 </head>
 <body>
-    <!-- Baris Judul Baru -->
-    <div class="title-bar">
-        Buku Doa Manasik Haji Alhanif
-    </div>
-    <div id="loading" style="font-family: sans-serif; color: #333;">Menyusun Buku Panduan...</div>
+    <div class="title-bar" id="header-bar">Memuat Data...</div>
     
-    <div class="flip-book" id="buku-doa">
-        <!-- Halaman akan di-generate oleh PDF.js di sini -->
+    <div id="loading" style="font-family: sans-serif; color: #333; margin-top: 20px;">Menyusun PDF dari Server...</div>
+    
+    <div class="flip-book" id="buku-manasik"></div>
+
+    <div class="nav-controls" id="nav-controls">
+        <button class="nav-btn" id="btn-prev">⬅ Halaman Sebelumnya</button>
+        <button class="nav-btn" id="btn-next">Halaman Berikutnya ➡</button>
     </div>
 
-    <!-- Library PDF.js dan PageFlip -->
+    <!-- Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
     
     <script>
-        // LOKASI FILE PDF: Sangat disarankan simpan langsung di repo GitHub Anda
-        const urlPDF = 'assets/bukudoa.pdf'; 
-
-        const container = document.getElementById('buku-doa');
-        const loading = document.getElementById('loading');
+        // GANTI DENGAN URL WEB APP BARU ANDA
+        const GAS_URL = "MASUKKAN_URL_WEB_APP_GAS_DI_SINI";
         
-        // Konfigurasi Worker untuk PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        const muatPDF = async () => {
+        async function muatAplikasi() {
             try {
-                // 1. Baca file PDF
-                const pdf = await pdfjsLib.getDocument(urlPDF).promise;
-                
-                // 2. Looping untuk setiap halaman di dalam PDF
+                // 1. Tarik Data Konfigurasi & PDF dari Server
+                const response = await fetch(GAS_URL);
+                const data = await response.json();
+
+                // 2. Terapkan Pengaturan Header & Warna
+                const headerBar = document.getElementById('header-bar');
+                headerBar.innerText = data.title;
+                headerBar.style.backgroundColor = data.bgColor;
+
+                // 3. Tampilkan Navigasi jika diaktifkan
+                if(data.navButtons === 'true') {
+                    document.getElementById('nav-controls').style.display = 'flex';
+                }
+
+                // 4. Proses PDF (Konversi Base64 menjadi file bacaan PDF.js)
+                if(!data.pdfBase64) {
+                    document.getElementById('loading').innerText = "Belum ada file PDF yang diunggah.";
+                    return;
+                }
+
+                const raw = window.atob(data.pdfBase64);
+                const rawLength = raw.length;
+                const array = new Uint8Array(new ArrayBuffer(rawLength));
+                for(let i = 0; i < rawLength; i++) {
+                    array[i] = raw.charCodeAt(i);
+                }
+
+                const pdf = await pdfjsLib.getDocument({data: array}).promise;
+                const container = document.getElementById('buku-manasik');
+
                 for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                     const page = await pdf.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: 1.5 });
                     
                     const pageDiv = document.createElement('div');
                     pageDiv.className = 'page';
                     
-                    // Skala 1.5 agar teks Arab dan latin tetap tajam saat di-zoom
-                    const viewport = page.getViewport({ scale: 1.5 });
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
-                    
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
                     
-                    // Render halaman PDF ke dalam canvas HTML
                     await page.render({ canvasContext: context, viewport: viewport }).promise;
                     
                     pageDiv.appendChild(canvas);
                     container.appendChild(pageDiv);
                 }
 
-                loading.style.display = 'none';
+                document.getElementById('loading').style.display = 'none';
                 container.style.display = 'block';
 
-                // 3. Inisialisasi Flipbook dengan rasio aman (A5)
+                // 5. Inisialisasi Flipbook
                 const pageFlip = new St.PageFlip(container, {
-                    width: 350,       
-                    height: 350,      // Kombinasi 350x496 membentuk rasio kertas A5
-                    size: "stretch",  // Properti wajib agar buku responsif di HP
-                    minWidth: 315,
-                    maxWidth: 1000,
-                    minHeight: 420,
-                    maxHeight: 1350,
-                    showCover: true,
-                    useMouseEvents: true
+                    width: 350, height: 496, size: "stretch",
+                    minWidth: 315, maxWidth: 1000, minHeight: 420, maxHeight: 1350,
+                    showCover: true, useMouseEvents: true
                 });
-                
                 pageFlip.loadFromHTML(document.querySelectorAll('.page'));
 
-            } catch (error) {
-                loading.innerText = "Gagal memuat PDF: Pastikan file berada di GitHub. Error: " + error.message;
-            }
-        };
+                // 6. Fungsikan Tombol Navigasi
+                document.getElementById('btn-prev').addEventListener('click', () => pageFlip.flipPrev());
+                document.getElementById('btn-next').addEventListener('click', () => pageFlip.flipNext());
 
-        document.addEventListener('DOMContentLoaded', muatPDF);
+            } catch (error) {
+                document.getElementById('loading').innerText = "Gagal memuat: " + error.message;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', muatAplikasi);
     </script>
 </body>
 </html>
